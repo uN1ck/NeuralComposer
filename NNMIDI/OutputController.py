@@ -14,11 +14,10 @@ class OutputController:
 
 
 class MidiOutput(OutputController):
-    def __init__(self, path_to_log: str, midi_file: str, division: int, numerator: int, denominator: int):
+    def __init__(self, path_to_log: str, division: int, numerator: int, denominator: int):
         """
         Конструктор класса-контроллера вывода данных модели
         :param path_to_log: путь к файлу для логов
-        :param midi_file: имя midi-файла
         :param division: "разбиение" или минимальная доля произведения 
         :param numerator: количество долей в такте
         :param denominator: размер доли в такте
@@ -35,12 +34,13 @@ class MidiOutput(OutputController):
         self.log = open(path_to_log, "w")
         self.buffer = []
         self.midi = MidiFile()
-        self.midi_name = midi_file
         self.division = division
         self.numerator = numerator
         self.denominator = denominator
 
-        for index in range(self.midi.tracks):
+        if len(self.midi.tracks) == 0:
+            self.midi.tracks.append(MidiTrack())
+        for index in range(len(self.midi.tracks)):
             track = MidiTrack()
             track.append(
                 MetaMessage(
@@ -53,10 +53,10 @@ class MidiOutput(OutputController):
 
     def write_data(self, value):
         self.write_log("DATA WRITING OPERATION\n")
-        self.write_log(value)
+        # self.write_log(value)
         self.buffer.append(value)
 
-    def build_midi_file(self):
+    def build_midi_file(self, name):
         current_notes = [0 for i in range(127)]
         last_event_time = 0
         index = 0
@@ -76,7 +76,5 @@ class MidiOutput(OutputController):
         for i in range(127):
             if current_notes[i] == 1:
                 self.midi.tracks[0].append(Message('note_off', note=i, velocity=127, time=last_event_time))
-
-    def close(self):
         self.log.close()
-        self.midi.save(self.midi_name + '.mid')
+        self.midi.save(name + '.mid')

@@ -4,21 +4,38 @@ import numpy as np
 from mido import MidiFile
 
 
-class InputController:
+class InputTrackController:
     @abstractmethod
-    def get_data_set(self) -> list:
+    def get_data_set(self):
         pass
 
     @abstractmethod
-    def get_segment_data_set(self, start: int, length: int) -> list:
+    def get_segment_data_set(self, start: int, length: int):
+        pass
+
+    @abstractmethod
+    def build_data_set(sample_length: int, step: int, path: str, division: int) -> ([], []):
         pass
 
 
-class MidiInput(InputController):
-    def __init__(self, sample_length: int, step: int, path: str, division: int, numerator: int = 4,
-                 denominator: int = 4) -> ([], []):
+class MidiInput(InputTrackController):
+    def __init__(self, division: int):
+        self.division = division
+        self.X = []
+        self.y = []
+        self.divisions = []
+
+    def get_segment_data_set(self, start: int, length: int):
+        return self.divisions[start:start + length]
+
+    def get_data_set(self) -> ([], []):
+        return [self.X, self.y]
+
+    @staticmethod
+    def build_data_set(sample_length: int, step: int, path: str, division: int) -> ([], []):
         """
-        Конструктор определяющий датасет для обучения сети, генерирует столкьо датасетов, стколько дорожек в треке
+        Метод-строитель класса MidiInput, определяющий датасет для обучения сети, генерирует столкьо датасетов, стколько дорожек в треке
+
         # ======================================================================================================================
         # Параметры такта и минимального деления
         # ======================================================================================================================
@@ -40,14 +57,11 @@ class MidiInput(InputController):
         :return: Массив MidiInput, где каждый отдельный экземпляр определяет отдельную дорожку трека
         :rtype: [MidiInput]
         """
-        self.division = division
-        self.X = []
-        self.y = []
-        self.divisions = []
 
         midi_file = MidiFile(path)
-        self.numerator = numerator
-        self.denominator = denominator
+
+        numerator = 4
+        denominator = 4
         ticks_per_division = int(midi_file.ticks_per_beat / division * 4)
 
         # Время в рамках всего трека
@@ -93,9 +107,3 @@ class MidiInput(InputController):
             data_set.append(data_item)
 
         return data_set
-
-    def get_segment_data_set(self, start: int, length: int):
-        return self.divisions[start:start + length]
-
-    def get_data_set(self) -> ([], []):
-        return [self.X, self.y]
