@@ -1,48 +1,4 @@
-import numpy as np
-from mido import MidiFile
-
-
-class CustomTrack:
-    """
-    Класс отвечающий за конкретную дорожку в треке, хранит ее в разобранном виде c заданнйо частотой разбиения
-    """
-
-    def __init__(self, division: int):
-        """
-        Конструктор трека
-        :param division: Частота разбиения трека
-        """
-        self.divisions = []
-        self.division = division
-
-    def get_data_set(self, step: int, sample_length: int, result_length: int = 1) -> [np.array, np.array]:
-        """
-        Метод доступа к подготовленному датасету, при каждом вызове формирует его заново. 
-        :param step: Длина смещения в долях минимального разбиения
-        :param sample_length: Длина единичного семпла для входных данных обучения
-        :param result_length: Длина единичного семпла для выходных данных обучения, как правило равна 1
-        :return: Пара массивов [X, y], где X входные, а y - выходные
-        """
-        in_divisions = []
-        out_divisions = []
-
-        for start in range(0, len(self.divisions) - sample_length, step):
-            buffer = []
-            for i in range(start, sample_length + start):
-                buffer.append(self.divisions[i])
-            in_divisions.append(buffer)
-            out_divisions.append(self.divisions[sample_length + start])
-        return [np.array(in_divisions), np.array(out_divisions)]
-
-    def get_segment_data_set(self, start: int, length: int) -> [np.array]:
-        """
-        Метод доступа к сегменту из датасета
-        :param start: Индекс первой доли сегмента в датасете
-        :param length: Длина сегмента
-        :return: Массив долей заданной длины
-        """
-        # TODO: Ошибки на размер датасета?
-        return np.array(self.divisions[start:start + length])
+from mido import MidiFile, Message, MidiTrack, MetaMessage
 
 
 class CustomMidiFile:
@@ -108,3 +64,47 @@ class CustomMidiFile:
             data_item.divisions = sample
             new_midi_file.tracks.append(data_item)
         return new_midi_file.tracks
+
+    def build_midi_file(self, name: str, tempo: int, numerator: int, denominator: int,
+                        notated_32nd_notes_per_beat: int = 8, clocks_per_click: int = 24) -> None:
+        """
+        Метод  построения midi-файла из набора треков экземпляра класса.
+        :param name: Названеи midi-файла, в который будет произведеня сборка
+        :param tempo: темп (bpm) 
+        :param numerator: Количество долей
+        :param denominator: Длительность доли
+        :param notated_32nd_notes_per_beat: количество 32х долей на каждую долю = 8
+        :param clocks_per_click: количесвто тиков на каждую долю = 24
+        :return: None
+        """
+        midi = MidiFile()
+
+        current_notes = [0 for i in range(127)]
+        last_event_time = 0
+        index = 0
+
+        for track in self.tracks:
+            current = MidiTrack()
+            current.append(
+                MetaMessage(
+                    'time_signature', numerator=numerator, denominator=denominator, clocks_per_click=clocks_per_click,
+                    notated_32nd_notes_per_beat=notated_32nd_notes_per_beat))
+
+            ticks_per_division = int(midi.ticks_per_beat / track.division * self.denominator)
+            for item in track:
+                # xor-ing current notes
+                for i in range(127):
+                    if current_notes[i] != item[i]:
+                        if current_notes[i] == 1:
+                            current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
+                        else:
+                            current.append(Message('note_on', note=i, velocity=127, time=last_event_time))
+                        last_event_time = index - last_event_time
+                        current_notes[i] ^= item[i]
+                index += ticks_per_division
+            for i in range(127):
+                if current_notes[i] == 1:
+                    current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
+
+            midi.tracks.append(current)
+        midi.save(name + '.mid')
