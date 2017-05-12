@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class CustomTrack:
     """
     Класс отвечающий за конкретную дорожку в треке, хранит ее в разобранном виде c заданнйо частотой разбиения
@@ -14,7 +11,7 @@ class CustomTrack:
         self.divisions = []
         self.division = division
 
-    def get_data_set(self, step: int, sample_length: int, result_length: int = 1) -> [np.array, np.array]:
+    def get_data_set(self, step: int, sample_length: int, result_length: int = 1) -> [list, list]:
         """
         Метод доступа к подготовленному датасету, при каждом вызове формирует его заново. 
         :param step: Длина смещения в долях минимального разбиения
@@ -31,9 +28,9 @@ class CustomTrack:
                 buffer.append(self.divisions[i])
             in_divisions.append(buffer)
             out_divisions.append(self.divisions[sample_length + start])
-        return [np.array(in_divisions), np.array(out_divisions)]
+        return [in_divisions, out_divisions]
 
-    def get_segment_data_set(self, start: int, length: int) -> [np.array]:
+    def get_segment_data_set(self, start: int, length: int) -> list:
         """
         Метод доступа к сегменту из датасета
         :param start: Индекс первой доли сегмента в датасете
@@ -41,4 +38,4 @@ class CustomTrack:
         :return: Массив долей заданной длины
         """
         # TODO: Ошибки на размер датасета?
-        return np.array(self.divisions[start:start + length])
+        return self.divisions[start:start + length]
