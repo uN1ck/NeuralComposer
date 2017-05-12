@@ -33,6 +33,21 @@ class Model(Sequential):
             result.append(1 if prediction[i] >= threshold else 0)
         return result
 
+    @staticmethod
+    def _threshold_sequence_max_delta(prediction: list, delta: float = 0.09, ) -> list:
+        """
+        Метод выделения звучахих нот из набора "предсказаний звучания", определяет звучащую ноту по величине вероятности звучания ноты.
+        Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе  
+        :param prediction: резульат предсказания звучащих нот
+        :param delta: порог звучания ноты
+        :return: бинаризованный массив звучащих нот
+        """
+        result = []
+        max_val = max(prediction)
+        for i in range(len(prediction)):
+            result.append(1 if max_val - prediction[i] <= delta else 0)
+        return result
+
     def train(self, iteration_count: int) -> None:
         """
         Специализированный метод обучения модели на данных, поступающих контроллера
@@ -57,7 +72,7 @@ class Model(Sequential):
         generated = []
         for iteration in range(iteration_count):
             raw_division = self.predict(np.array([iteration_seed]))
-            division = Model._threshold_sequence(raw_division[0], threshold)
+            division = Model._threshold_sequence_max_delta(raw_division[0])  # , threshold)
 
             iteration_seed.append(division)
             generated.append(division)
@@ -82,5 +97,5 @@ def build_model(midi_file_in: CustomMidiFile, sample_length: int) -> Model:
     model.add(LSTM(127, input_shape=(sample_length, 127), return_sequences=True))
     model.add(LSTM(127, input_shape=(sample_length, 127)))
     model.add(Activation('sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer='RMSprop')
+    model.compile(loss='categorical_crossentropy', optimizer='Nadam')
     return model
