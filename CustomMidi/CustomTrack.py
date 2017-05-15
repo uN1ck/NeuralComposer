@@ -1,14 +1,13 @@
+import numpy as np
+
+
 class CustomTrack:
     """
     Класс отвечающий за конкретную дорожку в треке, хранит ее в разобранном виде c заданнйо частотой разбиения
     """
 
-    def __init__(self, division: int):
-        """
-        Конструктор трека
-        :param division: Частота разбиения трека
-        """
-        self.divisions = []
+    def __init__(self, division: int, divisions: list = []):
+        self.divisions = divisions
         self.division = division
 
     def get_data_set(self, step: int, sample_length: int, result_length: int = 1) -> [list, list]:
@@ -28,7 +27,7 @@ class CustomTrack:
                 buffer.append(self.divisions[i])
             in_divisions.append(buffer)
             out_divisions.append(self.divisions[sample_length + start])
-        return [in_divisions, out_divisions]
+        return [np.array(in_divisions), np.array(out_divisions)]
 
     def get_segment_data_set(self, start: int, length: int) -> list:
         """

@@ -8,12 +8,13 @@ class CustomMidiFile:
     Миди файл. Класс-контейнер треков, определяет темп, размер и профчие характеристики трека
     """
 
-    def __init__(self):
+    def __init__(self, division: int = 8):
         self.tracks = []
         self.numerator = 4
         self.denominator = 4
+        self.division = division
 
-    def build_midi_file(self, name: str, tempo: int, numerator: int, denominator: int,
+    def build_midi_file(self, name: str, numerator: int, denominator: int,
                         notated_32nd_notes_per_beat: int = 8, clocks_per_click: int = 24) -> None:
         """
         Метод  построения midi-файла из набора треков экземпляра класса.
@@ -50,6 +51,7 @@ class CustomMidiFile:
                         last_event_time = index - last_event_time
                         current_notes[i] ^= item[i]
                 index += ticks_per_division
+            last_event_time = index - last_event_time
             for i in range(127):
                 if current_notes[i] == 1:
                     current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
