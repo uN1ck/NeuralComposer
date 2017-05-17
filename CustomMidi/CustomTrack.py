@@ -30,30 +30,11 @@ class CustomTrack:
         in_divisions = []
         out_divisions = []
 
-        for start in range(0, len(self.divisions) - sample_length - result_length, step):
-            buffer = []
-            for i in range(start, sample_length + start - 1):
-                in_divisions.append(self.divisions[i:i + sample_length])
-                out_divisions.append(self.divisions[i + sample_length:i + sample_length + result_length])
+        for start in range(0, len(self.divisions) - sample_length - result_length - 1, step):
+            in_divisions.append(self.divisions[start:start + sample_length])
+            out_divisions.append(self.divisions[start + sample_length])
 
-        np_in = np.ndarray(shape=(len(in_divisions), sample_length, 127), dtype=int)
-        np_out = np.ndarray(shape=(len(out_divisions), result_length, 127), dtype=int)
-
-        for i1 in range(len(in_divisions)):
-            for i2 in range(len(in_divisions[i1])):
-                for i3 in range(len(in_divisions[i1][i2])):
-                    np_in[i1][i2][i3] = in_divisions[i1][i2][i3]
-        for i1 in range(len(out_divisions)):
-            for i2 in range(len(out_divisions[i1])):
-                for i3 in range(len(out_divisions[i1][i2])):
-                    np_out[i1][i2][i3] = out_divisions[i1][i2][i3]
-
-                    # for i in range(start, sample_length + start):
-                    #     buffer.append(self.divisions[i])
-                    # in_divisions.app          end(buffer)
-                    # out_divisions.append(self.divisions[sample_length + start])
-
-        return [np_in, np_out]
+        return [np.array(in_divisions), np.array(out_divisions)]
 
     def get_segment_data_set(self, start: int, length: int) -> list:
         """
