@@ -1,7 +1,7 @@
 from keras.layers import LSTM, Conv1D
 
 from CustomMidi.CustomTrack import CustomTrack
-from CustomMidi.CustomTrackPool import CustomTrackPool, CustomTrackPoolInterface
+from CustomMidi.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
 from CustomMidi.Musician import Musician
 
 
@@ -12,26 +12,27 @@ class Orchestra:
         self.output = output
 
     def train(self, train_counts: int):
-        for track in self.input.get_data_pool():
+        for track in self.input:
             for musician in self.musicians:
                 musician.train(train_counts, track)
             # TODO: Нормальные логи генерации а не вот это вот все!
             # =======================================================================================================
-            self.generate(track.get_segment_data_set(0, self.musicians[0].x_size), 128)
+            self.generate(track.get_segment_data_set(0, self.musicians[0].x_size), 128, track.name)
             # =======================================================================================================
             # self.output.build_midi_files("res")
 
-    def generate(self, seed: list, length: int):
+    def generate(self, seed: list, length: int, name: str):
         for musician in self.musicians:
-            (seed, generated) = musician.generate(seed, length)
-            self.output.put_track(CustomTrack(8, 4, 4, generated))
+            (seed, generated, raw) = musician.generate(seed, length)
+            self.output.put_track(CustomTrack(8, 4, 4, generated), name, raw)
 
 
 def build_orchestra(input_path: str, output_path: str, division_in: int, division_out: int, sample_length: int,
                     output_length: int):
-    # TODO: сделать для несокльких инпутов!
-    input_file = CustomTrackPool(input_path, division_in)
-    output_file = CustomTrackPool(path_to_data_pool=None, division=division_out)
+    # TODO: сделать для несокльких инпутов несоклько музыкантов!
+
+    input_file = MongoDBTrackPool()
+    output_file = MongoDBTrackPool()
     result = Orchestra(input_file, output_file)
 
     musician = build_musician(sample_length, output_length)
@@ -42,6 +43,7 @@ def build_orchestra(input_path: str, output_path: str, division_in: int, divisio
 
 def build_musician(sample_length: int, output_length: int) -> Musician:
     # TODO: сделать для несокльких инпутов!
+    # TODO: сделать расчет на правильное создание сверток!
     model = Musician(sample_length, output_length)
 
     # model.add(LSTM(127, input_shape=(sample_length, 127)))

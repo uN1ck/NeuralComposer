@@ -49,20 +49,20 @@ class Musician(Sequential):
         параметром value в который будет передаваться необработанная доля
         :param seed: входыне данные для начала генерации
         :param iteration_count: количество долей для генерации (желательно кратно числу долей в такте)
-        :return: (seed, generated)
+        :return: (seed, generated, raw)
         """
         iteration_seed = seed
         generated = []
         raw = []
         for iteration in range(iteration_count):
-            raw_division = self.predict(np.array([iteration_seed]))
+            raw_division = self.predict(np.array([iteration_seed]))[0].tolist()
             raw += raw_division
             division = []
             for division_item in raw_division:
-                division.append(Musician._threshold_sequence_max_delta(division_item[0]))  # , threshold)
+                division.append(Musician._threshold_sequence_max_delta(division_item))  # , threshold)
 
             iteration_seed += division
             generated += division
-            iteration_seed = iteration_seed[1:]
+            iteration_seed = iteration_seed[self.y_size:]
 
-        return seed, generated
+        return seed, generated, raw

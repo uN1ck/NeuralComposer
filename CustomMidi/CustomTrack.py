@@ -11,13 +11,16 @@ class CustomTrack:
         divisions (list): набор подготовленных разбиений файла с частотой division
         numerator (int): Количество долей в такте
         denominator (int): Длительность одной доли
+        
     """
 
-    def __init__(self, division: int, numerator: int, denominator: int, divisions: list = list):
+    def __init__(self, division: int, numerator: int, denominator: int, divisions: list = list, name: str = "default"):
+        # TODO: Удалить поле name
         self.divisions = divisions
         self.division = division
         self.numerator = numerator
         self.denominator = denominator
+        self.name = name
 
     def get_data_set(self, step: int, sample_length: int, result_length: int = 1) -> [list, list]:
         """
@@ -32,7 +35,7 @@ class CustomTrack:
 
         for start in range(0, len(self.divisions) - sample_length - result_length - 1, step):
             in_divisions.append(self.divisions[start:start + sample_length])
-            out_divisions.append(self.divisions[start + sample_length])
+            out_divisions.append(self.divisions[start + sample_length: start + sample_length + result_length])
 
         return [np.array(in_divisions), np.array(out_divisions)]
 

@@ -17,6 +17,14 @@ class CustomTrackPoolInterface:
     def put_track(self, value: CustomTrack, name: str):
         pass
 
+    @abstractmethod
+    def __iter__(self):
+        pass
+
+    @abstractmethod
+    def __next__(self):
+        pass
+
 
 class CustomTrackPool(CustomTrackPoolInterface):
     def put_track(self, value: CustomTrack, name: str):
@@ -53,15 +61,30 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
     def __init__(self):
         client = MongoClient()
         self.data_set = client.musician.TrainSet
+        self._count = self.data_set.find({}).count()
         self.data_result = client.musician.ResultSet
+        self._index = 0
 
-    def put_track(self, value: CustomTrack, name: str):
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index > self._count:
+            raise StopIteration
+        else:
+            self._index += 1
+            result = CustomTrack(division=8, numerator=4, denominator=4,
+                                 divisions=self.data_set.find({})[self._index - 1]["data"])
+            return result
+
+    def put_track(self, value: CustomTrack, name: str, raw: list = None):
         self.data_result.insert_one(
             {
                 "name": name,
                 "division": value.division,
                 "sizes": [value.numerator, value.denominator],
-                "data": value.divisions
+                "data": value.divisions,
+                "raw": raw
             }
         )
 
