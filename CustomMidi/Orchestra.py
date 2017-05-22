@@ -27,7 +27,7 @@ class Orchestra:
             self.output.put_track(CustomTrack(8, 4, 4, generated), name, raw)
 
 
-def build_orchestra(input_path: str, output_path: str, division_in: int, division_out: int, sample_length: int,
+def build_orchestra(division_in: int, division_out: int, sample_length: int,
                     output_length: int):
     # TODO: сделать для несокльких инпутов несоклько музыкантов!
 

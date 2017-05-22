@@ -69,7 +69,7 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
         return self
 
     def __next__(self):
-        if self._index > self._count:
+        if self._index >= self._count:
             raise StopIteration
         else:
             self._index += 1
