@@ -28,28 +28,29 @@ class Orchestra:
 
 
 def build_orchestra(division_in: int, division_out: int, sample_length: int,
-                    output_length: int):
+                    output_length: int, thresholder, loss, optimizer):
     # TODO: сделать для несокльких инпутов несоклько музыкантов!
 
     input_file = MongoDBTrackPool()
     output_file = MongoDBTrackPool()
     result = Orchestra(input_file, output_file)
 
-    musician = build_musician(sample_length, output_length)
+    musician = build_musician(sample_length, output_length, thresholder, loss, optimizer)
     result.musicians.append(musician)
 
     return result
 
 
-def build_musician(sample_length: int, output_length: int) -> Musician:
+def build_musician(sample_length: int, output_length: int, thresholder, loss='mean_squared_error',
+                   optimizer='RMSprop') -> Musician:
     # TODO: сделать для несокльких инпутов!
     # TODO: сделать расчет на правильное создание сверток!
-    model = Musician(sample_length, output_length)
+    model = Musician(sample_length, output_length, thresholder)
 
     # model.add(LSTM(127, input_shape=(sample_length, 127)))
     model.add(Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
     model.add(LSTM(127, return_sequences=True))
     # model.add(LSTM(127))
 
-    model.compile(loss='kullback_leibler_divergence', optimizer='Nadam')
+    model.compile(loss=loss, optimizer=optimizer)
     return model

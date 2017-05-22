@@ -83,7 +83,7 @@ def build_custom_midi_file(path: str, division: int) -> CustomMidiFile:
     global_time = 0
 
     for index, track in enumerate(midi.tracks):
-        data_item = CustomTrack(division)
+        data_item = CustomTrack(division, 4, 4)
         # Двумерный массив нажатых нот для каждой выделенной доли
         sample = []
         current = [0 for i in range(127)]
