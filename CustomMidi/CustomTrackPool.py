@@ -74,7 +74,8 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
         else:
             self._index += 1
             result = CustomTrack(division=8, numerator=4, denominator=4,
-                                 divisions=self.data_set.find({})[self._index - 1]["data"])
+                                 divisions=self.data_set.find({})[self._index - 1]["data"],
+                                 name=self.data_set.find({})[self._index - 1]["name"])
             return result
 
     def put_track(self, value: CustomTrack, name: str, raw: list = None):
@@ -84,7 +85,8 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
                 "division": value.division,
                 "sizes": [value.numerator, value.denominator],
                 "data": value.divisions,
-                "raw": raw
+                "raw": raw,
+                "trackPoolId": hash(self)
             }
         )
 

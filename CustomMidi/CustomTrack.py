@@ -15,7 +15,7 @@ class CustomTrack:
     """
 
     def __init__(self, division: int, numerator: int, denominator: int, divisions: list = list, name: str = "default"):
-        # TODO: Удалить поле name
+        # TODO: Удалить поле name?
         self.divisions = divisions
         self.division = division
         self.numerator = numerator

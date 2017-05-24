@@ -1,4 +1,4 @@
-from keras.layers import LSTM, Conv1D
+from keras.layers import LSTM, Conv1D, Dropout
 
 from CustomMidi.CustomTrack import CustomTrack
 from CustomMidi.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
@@ -19,7 +19,6 @@ class Orchestra:
             # =======================================================================================================
             self.generate(track.get_segment_data_set(0, self.musicians[0].x_size), 128, track.name)
             # =======================================================================================================
-            # self.output.build_midi_files("res")
 
     def generate(self, seed: list, length: int, name: str):
         for musician in self.musicians:
@@ -49,8 +48,13 @@ def build_musician(sample_length: int, output_length: int, thresholder, loss='me
 
     # model.add(LSTM(127, input_shape=(sample_length, 127)))
     model.add(Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
+    model.add(Dropout(input_shape=(sample_length, 127), rate=0.2))
     model.add(LSTM(127, return_sequences=True))
     # model.add(LSTM(127))
 
     model.compile(loss=loss, optimizer=optimizer)
+
+    from keras.utils import plot_model
+    plot_model(model, to_file='model.png')
+
     return model
