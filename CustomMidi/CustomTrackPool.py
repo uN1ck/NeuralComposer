@@ -8,6 +8,9 @@ from pymongo import MongoClient
 from CustomMidi.CustomTrack import CustomTrack
 
 
+# ================================================================================================================================
+# Интерфейс для пула треков
+# ================================================================================================================================
 class CustomTrackPoolInterface:
     @abstractmethod
     def get_data_pool(self):
@@ -26,6 +29,9 @@ class CustomTrackPoolInterface:
         pass
 
 
+# ================================================================================================================================
+# Реализации интерфейса
+# ================================================================================================================================
 class CustomTrackPool(CustomTrackPoolInterface):
     def put_track(self, value: CustomTrack, name: str):
         self.data_pool.append(value)
@@ -58,11 +64,10 @@ class CustomTrackPool(CustomTrackPoolInterface):
 
 
 class MongoDBTrackPool(CustomTrackPoolInterface):
-    def __init__(self, input_collection_name: str = "TrainSet", output_collection_name: str = "ResultSet"):
+    def __init__(self, input_collection_name: str):
         client = MongoClient()
         self.data_set = client.musician[input_collection_name]
         self._count = self.data_set.find({}).count()
-        self.data_result = client.musician[output_collection_name]
         self._index = 0
 
     def __iter__(self):
@@ -83,7 +88,7 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
             return result
 
     def put_track(self, value: CustomTrack, raw: list = None):
-        self.data_result.insert_one(
+        self.data_set.insert_one(
             {
                 "name": value.name,
                 "division": value.division,

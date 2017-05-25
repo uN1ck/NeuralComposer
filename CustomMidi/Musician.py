@@ -52,28 +52,28 @@ class Musician(Sequential):
     Наследник класса Sequential из Keras, определяет методы обучения модели и работы с данными
     """
 
-    def __init__(self, x_size: int, y_size: int, thresholder=threshold_sequence_max_delta):
+    def __init__(self, x_size: int, y_size: int, threshold_function=threshold_sequence_max_delta, batch_size: int = 32):
         """
         Конструктор класса-наследика Sequential из Keras, требует обязательной инициализации контроллеров ввода/вывода
         """
         super().__init__()
         self.x_size = x_size
         self.y_size = y_size
-        self.thresholder = thresholder
+        self.batch_size = batch_size
+        self.threshold_function = threshold_function
 
-    def train(self, train_count: int, epochs: int, input: CustomTrackPoolInterface, output: CustomTrackPoolInterface):
+    def train(self, train_count: int, input: CustomTrackPoolInterface, output: CustomTrackPoolInterface):
         """
         Специализированный метод обучения модели на данных, поступающих контроллера.
         Генерирует логи после каждой итерации обучения состоящей из числа epochs обучений
         :param input: Интерфейс входных данных для модели
         :param output: Интерфейс выходных данных для модели, используется для логирования
         :param train_count: Количество итераций обучения
-        :param epochs: Количество эпох в итерации обучения, сколько раз сеть будет обучаться за одну итерацию.
         :return: None
         """
         for track in input:
             (X, y) = track.get_data_set(1, self.x_size, self.y_size)
-            self.fit(x=X, y=y, batch_size=128, epochs=train_count, verbose=2)
+            self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=2)
 
             # TODO: Нормальные логи генерации а не вот это вот все!
             # =======================================================================================================
@@ -96,11 +96,11 @@ class Musician(Sequential):
         generated = []
         raw = []
         for iteration in range(iteration_count):
-            raw_division = self.predict(np.array([iteration_seed]))[0].tolist()
+            raw_division = self.predict(np.array([iteration_seed]), self.batch_size)[0].tolist()
             raw += raw_division
             division = []
 
-            division += self.thresholder(raw_division)
+            division += self.threshold_function(raw_division)
 
             iteration_seed += division
             generated += division
