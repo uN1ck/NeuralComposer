@@ -22,7 +22,7 @@ class Orchestra:
 
     def generate(self, seed: list, length: int, name: str):
         for musician in self.musicians:
-            (seed, generated, raw) = musician.generate(seed, length)
+            (seed, generated, raw) = musician._generate(seed, length)
             self.output.put_track(CustomTrack(8, 4, 4, generated), name, raw)
 
 
@@ -53,8 +53,5 @@ def build_musician(sample_length: int, output_length: int, thresholder, loss='me
     # model.add(LSTM(127))
 
     model.compile(loss=loss, optimizer=optimizer)
-
-    from keras.utils import plot_model
-    plot_model(model, to_file='model.png')
 
     return model

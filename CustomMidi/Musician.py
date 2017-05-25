@@ -2,6 +2,7 @@ import numpy as np
 from keras.models import Sequential
 
 from CustomMidi.CustomTrack import CustomTrack
+from CustomMidi.CustomTrackPool import CustomTrackPoolInterface
 
 
 # ================================================================================================================================
@@ -60,19 +61,33 @@ class Musician(Sequential):
         self.y_size = y_size
         self.thresholder = thresholder
 
-    def train(self, iteration_count: int, data_set: CustomTrack) -> None:
+    def train(self, train_count: int, epochs: int, input: CustomTrackPoolInterface, output: CustomTrackPoolInterface):
         """
-        Специализированный метод обучения модели на данных, поступающих контроллера
-        :param data_set: 
-        :param iteration_count: Колчиество итераций обучения
+        Специализированный метод обучения модели на данных, поступающих контроллера.
+        Генерирует логи после каждой итерации обучения состоящей из числа epochs обучений
+        :param input: Интерфейс входных данных для модели
+        :param output: Интерфейс выходных данных для модели, используется для логирования
+        :param train_count: Количество итераций обучения
+        :param epochs: Количество эпох в итерации обучения, сколько раз сеть будет обучаться за одну итерацию.
         :return: None
         """
-        (X, y) = data_set.get_data_set(1, self.x_size, self.y_size)
-        self.fit(X, y, batch_size=128, epochs=iteration_count)
+        for track in input:
+            (X, y) = track.get_data_set(1, self.x_size, self.y_size)
+            self.fit(x=X, y=y, batch_size=128, epochs=train_count, verbose=2)
 
-    def generate(self, seed: list, iteration_count: int) -> tuple:
+            # TODO: Нормальные логи генерации а не вот это вот все!
+            # =======================================================================================================
+            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=256, name=track.name, output=output)
+            # =======================================================================================================
+
+    def generate(self, seed: list, iteration_count: int, name: str, output: CustomTrackPoolInterface,
+                 track: CustomTrack = CustomTrack(8, 4, 4, [], "")) -> tuple:
         """
         Метод генерации набора долей по сиду, составляет дорожку для трека и возвращает раздельно (сид, сгенерированная часть) 
+        :param track: Экземпляр Track, с заданными параметрами размера и разбиения, 
+            используется в качестве контейнера сгененрированных данных для дальнейшей передачи в TrackPool
+        :param output: Интерфейс выходных данных для модели
+        :param name: имя трека при генерации. Присваивается треку для логирования, например, по принадлежности к сиду его же именем.
         :param seed: входыне данные для начала генерации
         :param iteration_count: количество долей для генерации (желательно кратно числу долей в такте)
         :return: (seed, generated, raw)
@@ -91,4 +106,8 @@ class Musician(Sequential):
             generated += division
             iteration_seed = iteration_seed[self.y_size:]
 
+        track.divisions = generated
+        track.name = name
+
+        output.put_track(track, raw)
         return seed, generated, raw

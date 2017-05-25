@@ -58,11 +58,11 @@ class CustomTrackPool(CustomTrackPoolInterface):
 
 
 class MongoDBTrackPool(CustomTrackPoolInterface):
-    def __init__(self):
+    def __init__(self, input_collection_name: str = "TrainSet", output_collection_name: str = "ResultSet"):
         client = MongoClient()
-        self.data_set = client.musician.TrainSet
+        self.data_set = client.musician[input_collection_name]
         self._count = self.data_set.find({}).count()
-        self.data_result = client.musician.ResultSet
+        self.data_result = client.musician[output_collection_name]
         self._index = 0
 
     def __iter__(self):
@@ -73,15 +73,19 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
             raise StopIteration
         else:
             self._index += 1
-            result = CustomTrack(division=8, numerator=4, denominator=4,
-                                 divisions=self.data_set.find({})[self._index - 1]["data"],
-                                 name=self.data_set.find({})[self._index - 1]["name"])
+            item = self.data_set.find({})[self._index - 1]
+            # TODO: Конструктор из модели бд намутить
+            result = CustomTrack(division=item['division'],
+                                 numerator=item['sizes'][0],
+                                 denominator=item['sizes'][1],
+                                 divisions=item["data"],
+                                 name=item["name"])
             return result
 
-    def put_track(self, value: CustomTrack, name: str, raw: list = None):
+    def put_track(self, value: CustomTrack, raw: list = None):
         self.data_result.insert_one(
             {
-                "name": name,
+                "name": value.name,
                 "division": value.division,
                 "sizes": [value.numerator, value.denominator],
                 "data": value.divisions,
@@ -90,5 +94,5 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
             }
         )
 
-    def get_data_pool(self):
-        return self.data_set.aggregate({"$project": {"name": 1, "data": 1}})
+        # def get_data_pool(self):
+        #     return self.data_set.aggregate({"$project": {"name": 1, "data": 1}})
