@@ -11,11 +11,11 @@ class CustomTrack:
         divisions (list): набор подготовленных разбиений файла с частотой division
         numerator (int): Количество долей в такте
         denominator (int): Длительность одной доли
+        name (str): Имя трека
         
     """
 
     def __init__(self, division: int, numerator: int, denominator: int, divisions: list = list, name: str = "default"):
-        # TODO: Удалить поле name?
         self.divisions = divisions
         self.division = division
         self.numerator = numerator
@@ -105,22 +105,25 @@ class CustomTrack:
                 'time_signature', numerator=numerator, denominator=denominator, clocks_per_click=clocks_per_click,
                 notated_32nd_notes_per_beat=notated_32nd_notes_per_beat))
 
-        ticks_per_division = int(midi.ticks_per_beat / self.division * self.denominator)
+        ticks_per_division = int(midi.ticks_per_beat / (self.division * self.numerator / self.denominator))
         for item in self.divisions:
             # xor-ing current notes
             for i in range(127):
                 if current_notes[i] != item[i]:
                     if current_notes[i] == 1:
                         current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
+                        last_event_time = index - last_event_time
                     else:
                         current.append(Message('note_on', note=i, velocity=127, time=last_event_time))
-                    last_event_time = index - last_event_time
+                        last_event_time = index - last_event_time
                     current_notes[i] ^= item[i]
             index += ticks_per_division
         last_event_time = index - last_event_time
+        if last_event_time != 0:
+            current.append(Message('note_off', note=0, velocity=0, time=last_event_time))
         for i in range(127):
             if current_notes[i] == 1:
-                current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
+                current.append(Message('note_off', note=i, velocity=127, time=0))
 
         midi.tracks.append(current)
-        midi.save(name + '.mid')
+        midi.save(name + ".mid")

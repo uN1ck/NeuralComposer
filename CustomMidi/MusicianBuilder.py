@@ -6,10 +6,10 @@ from CustomMidi.Musician import Musician, threshold_sequence_max_delta
 
 def build_musician(input_pool: CustomTrackPoolInterface = MongoDBTrackPool("TrainSet"),
                    output_pool: CustomTrackPoolInterface = MongoDBTrackPool("ResultSet"),
-                   sample_length: int = 32, output_length: int = 16,
+                   sample_length: int = 32, output_length: int = 8,
                    tracks_count: int = 1,
                    threshold_function=threshold_sequence_max_delta,
-                   loss='mean_squared_error',
+                   loss='mean_absolute_error',
                    optimizer='RMSprop') -> (Musician, CustomTrackPoolInterface, CustomTrackPoolInterface):
     """
     Фабричный метод создания модели ИНС. по заданным параметрам строит сеть 

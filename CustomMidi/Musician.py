@@ -8,7 +8,7 @@ from CustomMidi.CustomTrackPool import CustomTrackPoolInterface
 # ================================================================================================================================
 # Функции для подготовки данных (трешхолдеры), поступающх из нейросети, используется при КАЖДОЙ генерации
 # ================================================================================================================================
-def threshold_sequence_max_delta(data_set: list, delta: float = 0.09) -> list:
+def threshold_sequence_max_delta(data_set: list, delta: float = 0.0009) -> list:
     """
     Метод выделения звучахих нот из набора "предсказаний звучания", определяет звучащую ноту по величине вероятности звучания ноты.
     Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе  
@@ -21,7 +21,7 @@ def threshold_sequence_max_delta(data_set: list, delta: float = 0.09) -> list:
         buffer = []
         max_val = max(item)
         for i in range(len(item)):
-            buffer.append(1 if 1.0 + max_val - item[i] <= delta else 0)
+            buffer.append(1 if abs(max_val - item[i]) < delta else 0)
         result.append(buffer)
     return result
 
@@ -73,11 +73,11 @@ class Musician(Sequential):
         """
         for track in input:
             (X, y) = track.get_data_set(1, self.x_size, self.y_size)
-            self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=2)
+            self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=1)
 
             # TODO: Нормальные логи генерации а не вот это вот все!
             # =======================================================================================================
-            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=256, name=track.name, output=output)
+            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=16, name=track.name, output=output)
             # =======================================================================================================
 
     def generate(self, seed: list, iteration_count: int, name: str, output: CustomTrackPoolInterface,
