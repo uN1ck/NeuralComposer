@@ -4,13 +4,13 @@ from CustomMidi.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPoo
 from CustomMidi.Musician import Musician, threshold_sequence_max_delta
 
 
-def build_musician(input_pool: CustomTrackPoolInterface = MongoDBTrackPool("TrainSet"),
-                   output_pool: CustomTrackPoolInterface = MongoDBTrackPool("ResultSet"),
+def build_musician(input_pool: CustomTrackPoolInterface = None,
+                   output_pool: CustomTrackPoolInterface = None,
                    sample_length: int = 32, output_length: int = 8,
                    tracks_count: int = 1,
                    threshold_function=threshold_sequence_max_delta,
                    loss='mean_absolute_error',
-                   optimizer='RMSprop') -> (Musician, CustomTrackPoolInterface, CustomTrackPoolInterface):
+                   optimizer='RMSprop') -> [Musician, CustomTrackPoolInterface, CustomTrackPoolInterface]:
     """
     Фабричный метод создания модели ИНС. по заданным параметрам строит сеть 
     :param tracks_count: Количество треков при обучении и генерации сети, которые следует генерировать.
@@ -26,17 +26,25 @@ def build_musician(input_pool: CustomTrackPoolInterface = MongoDBTrackPool("Trai
     :param optimizer: Оптимизатор компиляции см. Keras
     :return: Musician - собранная, но необученная модель. 
     """
+    if input_pool is None:
+        input_pool = MongoDBTrackPool("TrainSet")
+    if output_pool is None:
+        output_pool = MongoDBTrackPool("ResultSet")
 
-    # TODO: Дописать на множесто треков merge архитектуру
+    # TODO: Дописать на множесто треков merge архитектуру???
 
     model = Musician(sample_length, output_length, threshold_function)
-
-    # model.add(LSTM(127, input_shape=(sample_length, 127)))
     model.add(Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
-    model.add(Dropout(input_shape=(sample_length, 127), rate=0.2))
+    model.add(Dropout(rate=0.2))
     model.add(LSTM(127, return_sequences=True))
-    # model.add(LSTM(127))
-
     model.compile(loss=loss, optimizer=optimizer)
+    return [model, input_pool, output_pool]
 
-    return model, input_pool, output_pool
+
+def load_musician(input_pool: CustomTrackPoolInterface = None,
+                  output_pool: CustomTrackPoolInterface = None,
+                  output_length: int = 8,
+                  tracks_count: int = 1,
+                  threshold_function=threshold_sequence_max_delta,
+                  ) -> [Musician, CustomTrackPoolInterface, CustomTrackPoolInterface]:
+    pass

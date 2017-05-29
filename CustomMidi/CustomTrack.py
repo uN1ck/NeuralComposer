@@ -5,7 +5,6 @@ from mido import MidiFile, MidiTrack, MetaMessage, Message
 
 class CustomTrack:
     """    Класс-обертка для MIDI-трека. Используется для подготовки данных о дорожке MIDI-файла к употреблению нейросетью.
-    
     Attributes:
         division (int): минимальная доля разбиениения, сичтатеся относительно "целой ноты" произведения
         divisions (list): набор подготовленных разбиений файла с частотой division
@@ -84,10 +83,8 @@ class CustomTrack:
 
     def build_midi_file(self, name: str, numerator: int, denominator: int,
                         notated_32nd_notes_per_beat: int = 8, clocks_per_click: int = 24) -> None:
-        """
-        Метод  построения midi-файла из набора треков экземпляра класса.
+        """Метод  построения midi-файла из набора треков экземпляра класса.
         :param name: Названеи midi-файла, в который будет произведеня сборка
-        :param tempo: темп (bpm) 
         :param numerator: Количество долей
         :param denominator: Длительность доли
         :param notated_32nd_notes_per_beat: количество 32х долей на каждую долю = 8

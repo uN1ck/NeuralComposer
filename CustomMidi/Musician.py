@@ -9,8 +9,8 @@ from CustomMidi.CustomTrackPool import CustomTrackPoolInterface
 # Функции для подготовки данных (трешхолдеры), поступающх из нейросети, используется при КАЖДОЙ генерации
 # ================================================================================================================================
 def threshold_sequence_max_delta(data_set: list, delta: float = 0.0009) -> list:
-    """
-    Метод выделения звучахих нот из набора "предсказаний звучания", определяет звучащую ноту по величине вероятности звучания ноты.
+    """Метод выделения звучахих нот из набора "предсказаний звучания",
+    определяет звучащую ноту по величине вероятности звучания ноты.
     Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе  
     :param data_set: резульат предсказания звучащих нот
     :param delta: порог звучания ноты
@@ -27,11 +27,10 @@ def threshold_sequence_max_delta(data_set: list, delta: float = 0.0009) -> list:
 
 
 def threshold_sequence_max(data_set: list) -> list:
-    """
-    Метод выделения звучахих нот из набора "предсказаний звучания", определяет звучащую ноту по величине вероятности звучания ноты.
+    """Метод выделения звучахих нот из набора "предсказаний звучания",
+    определяет звучащую ноту по величине вероятности звучания ноты.
     Для каждой доли разделения выбирает только максимальныее значения
     :param data_set: резульат предсказания звучащих нот
-    :param delta: порог звучания ноты
     :return: бинаризованный массив звучащих нот
     """
     result = []
@@ -62,30 +61,30 @@ class Musician(Sequential):
         self.batch_size = batch_size
         self.threshold_function = threshold_function
 
-    def train(self, train_count: int, input: CustomTrackPoolInterface, output: CustomTrackPoolInterface):
+    def train(self, train_count: int, input_pool: CustomTrackPoolInterface, output_pool: CustomTrackPoolInterface):
         """
         Специализированный метод обучения модели на данных, поступающих контроллера.
         Генерирует логи после каждой итерации обучения состоящей из числа epochs обучений
-        :param input: Интерфейс входных данных для модели
-        :param output: Интерфейс выходных данных для модели, используется для логирования
+        :param input_pool: Интерфейс входных данных для модели
+        :param output_pool: Интерфейс выходных данных для модели, используется для логирования
         :param train_count: Количество итераций обучения
         :return: None
         """
-        for track in input:
+        for track in input_pool:
             (X, y) = track.get_data_set(1, self.x_size, self.y_size)
             self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=1)
-
             # TODO: Нормальные логи генерации а не вот это вот все!
             # =======================================================================================================
-            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=16, name=track.name, output=output)
+            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=256, name=track.name,
+                          output=output_pool)
             # =======================================================================================================
 
     def generate(self, seed: list, iteration_count: int, name: str, output: CustomTrackPoolInterface,
                  track: CustomTrack = CustomTrack(8, 4, 4, [], "")) -> tuple:
-        """
-        Метод генерации набора долей по сиду, составляет дорожку для трека и возвращает раздельно (сид, сгенерированная часть) 
+        """Метод генерации набора долей по сиду, составляет дорожку для трека и
+        возвращает раздельно (сид, сгенерированная часть)
         :param track: Экземпляр Track, с заданными параметрами размера и разбиения, 
-            используется в качестве контейнера сгененрированных данных для дальнейшей передачи в TrackPool
+            используется в качестве контейнера сгененрированных данных для дальнейшей передачи в TrackPoolDoge
         :param output: Интерфейс выходных данных для модели
         :param name: имя трека при генерации. Присваивается треку для логирования, например, по принадлежности к сиду его же именем.
         :param seed: входыне данные для начала генерации

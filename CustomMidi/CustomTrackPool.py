@@ -12,9 +12,9 @@ from CustomMidi.CustomTrack import CustomTrack
 # Интерфейс для пула треков
 # ================================================================================================================================
 class CustomTrackPoolInterface:
-    @abstractmethod
-    def get_data_pool(self):
-        pass
+    def __init__(self):
+        self.data_set = []
+        self._index = 0
 
     @abstractmethod
     def put_track(self, value: CustomTrack, name: str):
@@ -32,18 +32,19 @@ class CustomTrackPoolInterface:
 # ================================================================================================================================
 # Реализации интерфейса
 # ================================================================================================================================
-class CustomTrackPool(CustomTrackPoolInterface):
-    def put_track(self, value: CustomTrack, name: str):
-        self.data_pool.append(value)
+class FileTrackPool(CustomTrackPoolInterface):
+    def __next__(self):
+        if self._index < len(self.data_set):
+            self._index += 1
+            return self.data_set[self._index - 1]
+        else:
+            raise StopIteration
 
-    def get_data_pool(self):
-        return self.data_pool
+    def put_track(self, value: CustomTrack, name: str):
+        self.data_set.append(value)
 
     def __init__(self, path_to_data_pool, division: int):
-        self.data_pool = []
-        self._index = 0
-        self.division = 8
-
+        super().__init__()
         if path_to_data_pool is not None:
             for filename in glob.glob(os.path.join(path_to_data_pool, '*.mid')):
                 midi_file = MidiFile(filename)
@@ -53,22 +54,18 @@ class CustomTrackPool(CustomTrackPoolInterface):
                 current_track.parse_midi_file(midi_file)
                 # ==================================================================
 
-                self.data_pool.append(current_track)
+                self.data_set.append(current_track)
 
     def __iter__(self):
-        return self.data_pool
-
-    def build_midi_files(self, path):
-        for i in range(len(self.data_pool)):
-            self.data_pool[i].build_midi_file(path + "\\" + str(i), 4, 4)
+        return self
 
 
 class MongoDBTrackPool(CustomTrackPoolInterface):
-    def __init__(self, input_collection_name: str):
+    def __init__(self, collection_name: str):
+        super().__init__()
         client = MongoClient()
-        self.data_set = client.musician[input_collection_name]
+        self.data_set = client.musician[collection_name]
         self._count = self.data_set.find({}).count()
-        self._index = 0
 
     def __iter__(self):
         return self
@@ -98,6 +95,3 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
                 "trackPoolId": hash(self)
             }
         )
-
-        # def get_data_pool(self):
-        #     return self.data_set.aggregate({"$project": {"name": 1, "data": 1}})
