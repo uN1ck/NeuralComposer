@@ -55,13 +55,15 @@ class MongoConnection:
 
         result_interpretation = []
         for track in midi.tracks:
+            if len(track) < 128:
+                continue
+
             print(str(track))
             track_interpretation = []
             current = [0 for i in range(127)]
-
             add_to_parsing = True
-            for message in track:
 
+            for message in track:
                 if not message.is_meta:
                     if message.channel == 9:
                         add_to_parsing = False
@@ -80,10 +82,11 @@ class MongoConnection:
                     current[message.note] = 0
                 global_time += message.time
 
-            if add_to_parsing:
+            if add_to_parsing and len(track_interpretation) > 64:
                 result_interpretation.append(track_interpretation)
 
-        result = ParsedMidi(name=path, division=32, numerator=numerator, denominator=denominator, track_count=len(midi.tracks),
+        result = ParsedMidi(name=path, division=32, numerator=numerator, denominator=denominator,
+                            track_count=len(result_interpretation),
                             divisions=result_interpretation)
         return result
 
@@ -106,7 +109,7 @@ class MongoConnection:
             index += 1
 
     @staticmethod
-    def statistics(collection_name):
+    def statistics_intervals(collection_name):
         client = MongoClient()
         data_collection = client.musician[collection_name]
         data_list = list(data_collection.find({}))
@@ -149,22 +152,46 @@ class MongoConnection:
 
         return intervals
 
+    @staticmethod
+    def statistics_notes(collection_name):
+        client = MongoClient()
+        data_collection = client.musician[collection_name]
+        data_list = list(data_collection.find({}))
+
+        notes = [0 for i in range(12)]
+        summon_beats = 0
+
+        for data_item in data_list:
+            for item in data_item['data']:
+                summon_beats += 1
+                notes_sounds = [0 for i in range(12)]
+                for i in range(127):
+                    notes_sounds[i % 12] += item[i] == 1
+                index = 0
+                for i in range(11):
+                    index += notes_sounds[i] > 0
+                notes[index] += 1
+            print(data_item['name'])
+
+        for item in range(len(notes)):
+            notes[item] /= float(summon_beats)
+
+        return notes
+
 
 # ==================================================================
 # РАНТАЙМ!
 # ==================================================================
 
-MongoConnection.to_db("TrainSet")
 
-# from plotly.offline import plot
-# import plotly.graph_objs as go
-#
-# trace1 = go.Bar(x=[i + 1 for i in range(24)], y=MongoConnection.statistics("TrainSet"), name="Train")
-# trace2 = go.Bar(x=[i + 1 for i in range(24)], y=MongoConnection.statistics("RMS_ABSOLUTE_16_4"), name="RMS_4")
-# trace3 = go.Bar(x=[i + 1 for i in range(24)], y=MongoConnection.statistics("ADAM_ABSOLUTE_16_4"), name="Adam_4")
-# trace4 = go.Bar(x=[i + 1 for i in range(24)], y=MongoConnection.statistics("RMS_ABSOLUTE_16_8"), name="RMS_8")
-# trace5 = go.Bar(x=[i + 1 for i in range(24)], y=MongoConnection.statistics("ADAM_ABSOLUTE_16_8"), name="Adam_8")
-#
-# data = [trace1, trace2, trace3, trace4, trace5]
-#
-# plot(data, filename='basic-bar')
+from plotly.offline import plot
+import plotly.graph_objs as go
+
+trace1 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_8"), name="Absolute 8")
+trace2 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_4"), name="Absolute 4")
+trace3 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_8"), name="Squared 8")
+trace4 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_4"), name="Squared 4")
+
+data = [trace1, trace2, trace3, trace4]
+
+plot(data, filename='basic-bar')

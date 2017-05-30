@@ -1,14 +1,14 @@
 from keras.layers import LSTM, Conv1D, Dropout
 
 from CustomMidi.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
-from CustomMidi.Musician import Musician, threshold_sequence_max_delta
+from CustomMidi.Musician import Musician
 
 
 def build_musician(input_pool: CustomTrackPoolInterface = None,
                    output_pool: CustomTrackPoolInterface = None,
                    sample_length: int = 32, output_length: int = 8,
                    tracks_count: int = 1,
-                   threshold_function=threshold_sequence_max_delta,
+                   threshold_delta=0.0009,
                    loss='mean_absolute_error',
                    optimizer='RMSprop') -> [Musician, CustomTrackPoolInterface, CustomTrackPoolInterface]:
     """
@@ -33,18 +33,9 @@ def build_musician(input_pool: CustomTrackPoolInterface = None,
 
     # TODO: Дописать на множесто треков merge архитектуру???
 
-    model = Musician(sample_length, output_length, threshold_function)
+    model = Musician(sample_length, output_length, threshold_delta)
     model.add(Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
     model.add(Dropout(rate=0.2))
     model.add(LSTM(127, return_sequences=True))
     model.compile(loss=loss, optimizer=optimizer)
     return [model, input_pool, output_pool]
-
-
-def load_musician(input_pool: CustomTrackPoolInterface = None,
-                  output_pool: CustomTrackPoolInterface = None,
-                  output_length: int = 8,
-                  tracks_count: int = 1,
-                  threshold_function=threshold_sequence_max_delta,
-                  ) -> [Musician, CustomTrackPoolInterface, CustomTrackPoolInterface]:
-    pass

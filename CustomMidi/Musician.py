@@ -6,44 +6,6 @@ from CustomMidi.CustomTrackPool import CustomTrackPoolInterface
 
 
 # ================================================================================================================================
-# Функции для подготовки данных (трешхолдеры), поступающх из нейросети, используется при КАЖДОЙ генерации
-# ================================================================================================================================
-def threshold_sequence_max_delta(data_set: list, delta: float = 0.0009) -> list:
-    """Метод выделения звучахих нот из набора "предсказаний звучания",
-    определяет звучащую ноту по величине вероятности звучания ноты.
-    Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе  
-    :param data_set: резульат предсказания звучащих нот
-    :param delta: порог звучания ноты
-    :return: бинаризованный массив звучащих нот
-    """
-    result = []
-    for item in data_set:
-        buffer = []
-        max_val = max(item)
-        for i in range(len(item)):
-            buffer.append(1 if abs(max_val - item[i]) < delta else 0)
-        result.append(buffer)
-    return result
-
-
-def threshold_sequence_max(data_set: list) -> list:
-    """Метод выделения звучахих нот из набора "предсказаний звучания",
-    определяет звучащую ноту по величине вероятности звучания ноты.
-    Для каждой доли разделения выбирает только максимальныее значения
-    :param data_set: резульат предсказания звучащих нот
-    :return: бинаризованный массив звучащих нот
-    """
-    result = []
-    for item in data_set:
-        buffer = []
-        max_val = max(item)
-        for i in range(len(item)):
-            buffer.append(1 if max_val == item[i] else 0)
-        result.append(buffer)
-    return result
-
-
-# ================================================================================================================================
 # Функции для подготовки данных (трешхолдеры), поступающх из нейросети
 # ================================================================================================================================
 class Musician(Sequential):
@@ -51,7 +13,7 @@ class Musician(Sequential):
     Наследник класса Sequential из Keras, определяет методы обучения модели и работы с данными
     """
 
-    def __init__(self, x_size: int, y_size: int, threshold_function=threshold_sequence_max_delta, batch_size: int = 32):
+    def __init__(self, x_size: int, y_size: int, threshold_delta=0.0009, batch_size: int = 32):
         """
         Конструктор класса-наследика Sequential из Keras, требует обязательной инициализации контроллеров ввода/вывода
         """
@@ -59,7 +21,25 @@ class Musician(Sequential):
         self.x_size = x_size
         self.y_size = y_size
         self.batch_size = batch_size
-        self.threshold_function = threshold_function
+        self.threshold_delta = threshold_delta
+
+    def threshold_sequence_max_delta(self, data_set: list, delta: float = 0.0009) -> list:
+        """Метод выделения звучахих нот из набора "предсказаний звучания",
+        определяет звучащую ноту по величине вероятности звучания ноты.
+        Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе
+        :param data_set: резульат предсказания звучащих нот
+        :param delta: порог звучания ноты
+        :return: бинаризованный массив звучащих нот
+        """
+        result = []
+        for item in data_set:
+            buffer = []
+            max_val = max(item)
+            for i in range(len(item)):
+                buffer.append(1 if abs(max_val - item[i]) < delta else 0)
+            result.append(buffer)
+        return result
+
 
     def train(self, train_count: int, input_pool: CustomTrackPoolInterface, output_pool: CustomTrackPoolInterface):
         """
@@ -72,12 +52,15 @@ class Musician(Sequential):
         """
         for track in input_pool:
             (X, y) = track.get_data_set(1, self.x_size, self.y_size)
-            self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=1)
-            # TODO: Нормальные логи генерации а не вот это вот все!
-            # =======================================================================================================
-            self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=256, name=track.name,
-                          output=output_pool)
-            # =======================================================================================================
+            try:
+                self.fit(x=X, y=y, batch_size=self.batch_size, epochs=train_count, verbose=1)
+                # TODO: Нормальные логи генерации а не вот это вот все!
+                # =======================================================================================================
+                self.generate(seed=track.get_segment_data_set(0, self.x_size), iteration_count=64, name=track.name,
+                              output=output_pool)
+                # =======================================================================================================
+            except Exception as ex:
+                print("Too small Batch at: " + track.name)
 
     def generate(self, seed: list, iteration_count: int, name: str, output: CustomTrackPoolInterface,
                  track: CustomTrack = CustomTrack(8, 4, 4, [], "")) -> tuple:
@@ -99,7 +82,7 @@ class Musician(Sequential):
             raw += raw_division
             division = []
 
-            division += self.threshold_function(raw_division)
+            division += self.threshold_sequence_max_delta(raw_division, self.threshold_delta)
 
             iteration_seed += division
             generated += division
