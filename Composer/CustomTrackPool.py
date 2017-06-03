@@ -5,7 +5,7 @@ from abc import abstractmethod
 from mido import MidiFile
 from pymongo import MongoClient
 
-from CustomMidi.CustomTrack import CustomTrack
+from Composer.CustomTrack import CustomTrack
 
 
 # ================================================================================================================================

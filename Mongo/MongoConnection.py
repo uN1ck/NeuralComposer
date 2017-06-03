@@ -1,10 +1,10 @@
 import glob
 import os
 
-from mido import MidiFile
+from mido import MidiFile, merge_tracks
 from pymongo import MongoClient
 
-from CustomMidi.CustomTrack import CustomTrack
+from Composer.CustomTrack import CustomTrack
 
 
 class ParsedMidi:
@@ -54,7 +54,9 @@ class MongoConnection:
         global_time = 0
 
         result_interpretation = []
-        for track in midi.tracks:
+        merged = merge_tracks(midi.tracks)
+
+        for track in [merged]:
             if len(track) < 128:
                 continue
 
@@ -64,14 +66,6 @@ class MongoConnection:
             add_to_parsing = True
 
             for message in track:
-                if not message.is_meta:
-                    if message.channel == 9:
-                        add_to_parsing = False
-                        break
-                    elif message.type == "program_change" and 9 <= message.program <= 16 and message.program <= 112:
-                        add_to_parsing = False
-                        break
-
                 if message.time > 0:
                     for i in range(int(message.time / ticks_per_division)):
                         track_interpretation.append(list(current))
@@ -183,15 +177,22 @@ class MongoConnection:
 # РАНТАЙМ!
 # ==================================================================
 
+# MongoConnection.from_db("II_RMS_SQUARED_16_8")
+MongoConnection.from_db("RMS_PERCENTAGE_16_4")
+MongoConnection.from_db("RMS_PERCENTAGE_16_8")
 
-from plotly.offline import plot
-import plotly.graph_objs as go
+MongoConnection.from_db("ADAM_PERCENTAGE_16_4")
+MongoConnection.from_db("ADAM_PERCENTAGE_16_8")
 
-trace1 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_8"), name="Absolute 8")
-trace2 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_4"), name="Absolute 4")
-trace3 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_8"), name="Squared 8")
-trace4 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_4"), name="Squared 4")
 
-data = [trace1, trace2, trace3, trace4]
-
-plot(data, filename='basic-bar')
+# from plotly.offline import plot
+# import plotly.graph_objs as go
+#
+# trace1 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_8"), name="Absolute 8")
+# trace2 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_4"), name="Absolute 4")
+# trace3 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_8"), name="Squared 8")
+# trace4 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_4"), name="Squared 4")
+#
+# data = [trace1, trace2, trace3, trace4]
+#
+# plot(data, filename='basic-bar')

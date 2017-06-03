@@ -1,6 +1,7 @@
 import mido
 import numpy as np
-from mido import MidiFile, MidiTrack, MetaMessage, Message
+from mido import MidiFile, MidiTrack, Message
+from mido.midifiles.midifiles import DEFAULT_TICKS_PER_BEAT
 
 
 class CustomTrack:
@@ -82,37 +83,32 @@ class CustomTrack:
         self.divisions = sample
 
     def build_midi_file(self, name: str, numerator: int, denominator: int,
-                        notated_32nd_notes_per_beat: int = 8, clocks_per_click: int = 24) -> None:
+                        ticks_per_beat: int = DEFAULT_TICKS_PER_BEAT) -> None:
         """Метод  построения midi-файла из набора треков экземпляра класса.
+        :param ticks_per_beat:
         :param name: Названеи midi-файла, в который будет произведеня сборка
         :param numerator: Количество долей
         :param denominator: Длительность доли
-        :param notated_32nd_notes_per_beat: количество 32х долей на каждую долю = 8
-        :param clocks_per_click: количесвто тиков на каждую долю = 24
         :return: None
         """
-        midi = MidiFile()
+        midi = MidiFile(ticks_per_beat=ticks_per_beat)
 
         current_notes = [0 for i in range(127)]
         last_event_time = 0
         index = 0
         current = MidiTrack()
-        current.append(
-            MetaMessage(
-                'time_signature', numerator=numerator, denominator=denominator, clocks_per_click=clocks_per_click,
-                notated_32nd_notes_per_beat=notated_32nd_notes_per_beat))
 
-        ticks_per_division = int(midi.ticks_per_beat / (self.division * self.numerator / self.denominator))
+        ticks_per_division = int(midi.ticks_per_beat / (self.division * numerator / denominator))
         for item in self.divisions:
             # xor-ing current notes
             for i in range(127):
                 if current_notes[i] != item[i]:
                     if current_notes[i] == 1:
-                        current.append(Message('note_off', note=i, velocity=127, time=last_event_time))
-                        last_event_time = index - last_event_time
+                        current.append(Message('note_off', note=i, velocity=127, time=index - last_event_time))
+                        last_event_time = index
                     else:
-                        current.append(Message('note_on', note=i, velocity=127, time=last_event_time))
-                        last_event_time = index - last_event_time
+                        current.append(Message('note_on', note=i, velocity=127, time=index - last_event_time))
+                        last_event_time = index
                     current_notes[i] ^= item[i]
             index += ticks_per_division
         last_event_time = index - last_event_time

@@ -1,7 +1,8 @@
 from keras.layers import LSTM, Conv1D, Dropout
+from keras.models import Sequential
 
-from CustomMidi.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
-from CustomMidi.Musician import Musician
+from Composer.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
+from Composer.Musician import Musician
 
 
 def build_musician(input_pool: CustomTrackPoolInterface = None,
@@ -32,10 +33,11 @@ def build_musician(input_pool: CustomTrackPoolInterface = None,
         output_pool = MongoDBTrackPool("ResultSet")
 
     # TODO: Дописать на множесто треков merge архитектуру???
-
-    model = Musician(sample_length, output_length, threshold_delta)
-    model.add(Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
+    model = Sequential()
+    model.add(
+        Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
     model.add(Dropout(rate=0.2))
     model.add(LSTM(127, return_sequences=True))
     model.compile(loss=loss, optimizer=optimizer)
-    return [model, input_pool, output_pool]
+    musician = Musician(sample_length, output_length, threshold_delta, model=model)
+    return [musician, input_pool, output_pool]
