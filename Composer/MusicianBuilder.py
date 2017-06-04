@@ -1,4 +1,4 @@
-from keras.layers import LSTM, Conv1D, Dropout
+from keras.layers import LSTM, Dropout
 from keras.models import Sequential
 
 from Composer.CustomTrackPool import CustomTrackPoolInterface, MongoDBTrackPool
@@ -7,9 +7,9 @@ from Composer.Musician import Musician
 
 def build_musician(input_pool: CustomTrackPoolInterface = None,
                    output_pool: CustomTrackPoolInterface = None,
-                   sample_length: int = 32, output_length: int = 8,
+                   sample_length: int = 32,
                    tracks_count: int = 1,
-                   threshold_delta=0.0009,
+                   threshold_delta=256,
                    loss='mean_absolute_error',
                    optimizer='RMSprop') -> [Musician, CustomTrackPoolInterface, CustomTrackPoolInterface]:
     """
@@ -20,8 +20,7 @@ def build_musician(input_pool: CustomTrackPoolInterface = None,
     :param input_pool: ?
     :param output_pool:  ?
     :param sample_length: Количество долей, поступающее на вход при каждой итерации обучения
-    :param output_length: Количество долей, поступающее на выход при каждой итерации обучения и при шаге генерации
-    :param threshold_function: Функция приведения выходных данных нейросети к требуемому виду. 
+    :param threshold_delta: Функция приведения выходных данных нейросети к требуемому виду.
         Обязательно наличие параметра value, с который будут передаваться выходные данные. 
     :param loss: Функция потерь см. Keras
     :param optimizer: Оптимизатор компиляции см. Keras
@@ -34,10 +33,11 @@ def build_musician(input_pool: CustomTrackPoolInterface = None,
 
     # TODO: Дописать на множесто треков merge архитектуру???
     model = Sequential()
-    model.add(
-        Conv1D(input_shape=(sample_length, 127), filters=127, kernel_size=1, strides=int(sample_length / output_length)))
+
+    model.add(LSTM(127, input_shape=(sample_length, 127), return_sequences=True))
     model.add(Dropout(rate=0.2))
     model.add(LSTM(127, return_sequences=True))
+
     model.compile(loss=loss, optimizer=optimizer)
-    musician = Musician(sample_length, output_length, threshold_delta, model=model)
+    musician = Musician(model.input_shape[1], model.output_shape[1], threshold_delta, model=model)
     return [musician, input_pool, output_pool]

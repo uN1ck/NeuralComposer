@@ -1,6 +1,7 @@
 from Composer.CustomTrackPool import MongoDBTrackPool
 from Composer.MusicianBuilder import build_musician
 
+'''
 [musician, input_pool, output_pool] = build_musician(loss='mean_squared_error', optimizer='RMSprop',
                                                      output_pool=MongoDBTrackPool("2_RMS_SQUARED_16_2"), sample_length=16,
                                                      output_length=2,
@@ -144,3 +145,36 @@ for i in range(0, 40, 1):
 for i in range(0, 40, 1):
     musician.train(train_count=10, input_pool=input_pool, output_pool=output_pool)
     musician.save(filepath="LONG_ADAM_ABSOLUTE_32_16", overwrite=True)
+'''
+
+[musician, input_pool, output_pool] = build_musician(loss='mean_squared_error', optimizer='Adam',
+                                                     output_pool=MongoDBTrackPool("3_ADAM_SQUARED_16"), sample_length=16,
+                                                     threshold_delta=256
+                                                     )
+for i in range(5):
+    musician.train(train_count=5, input_pool=input_pool, output_pool=output_pool)
+musician.save(filepath="3_ADAM_SQUARED_16", overwrite=True)
+
+[musician, input_pool, output_pool] = build_musician(loss='mean_squared_error', optimizer='RMSprop',
+                                                     output_pool=MongoDBTrackPool("3_RMS_SQUARED_16"), sample_length=16,
+                                                     threshold_delta=256
+                                                     )
+for i in range(5):
+    musician.train(train_count=5, input_pool=input_pool, output_pool=output_pool)
+musician.save(filepath="3_RMS_SQUARED_16", overwrite=True)
+
+[musician, input_pool, output_pool] = build_musician(loss='mean_absolute_error', optimizer='Adam',
+                                                     output_pool=MongoDBTrackPool("3_ADAM_ABSOLUTE_32"), sample_length=32,
+                                                     threshold_delta=256
+                                                     )
+for i in range(5):
+    musician.train(train_count=5, input_pool=input_pool, output_pool=output_pool)
+musician.save(filepath="3_ADAM_ABSOLUTE_32", overwrite=True)
+
+[musician, input_pool, output_pool] = build_musician(loss='mean_absolute_error', optimizer='RMSprop',
+                                                     output_pool=MongoDBTrackPool("3_RMS_ABSOLUTE_32"), sample_length=32,
+                                                     threshold_delta=256
+                                                     )
+for i in range(5):
+    musician.train(train_count=5, input_pool=input_pool, output_pool=output_pool)
+musician.save(filepath="3_RMS_ABSOLUTE_32", overwrite=True)

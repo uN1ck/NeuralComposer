@@ -13,7 +13,7 @@ class Musician:
     Наследник класса Sequential из Keras, определяет методы обучения модели и работы с данными
     """
 
-    def __init__(self, x_size: int, y_size: int, threshold_delta=0.0009, batch_size: int = 32, model: Sequential = Sequential()):
+    def __init__(self, x_size: int, y_size: int, threshold_delta=8, batch_size: int = 32, model: Sequential = Sequential()):
         """
         Конструктор класса-наследика Sequential из Keras, требует обязательной инициализации контроллеров ввода/вывода
         """
@@ -24,16 +24,18 @@ class Musician:
         self.threshold_delta = threshold_delta
         self.model = model
 
-    def threshold_sequence_max_delta(self, data_set: list, delta: float = 0.0009) -> list:
+    def threshold_sequence_max_delta(self, data_set: list, delta: float = 2) -> list:
         """Метод выделения звучахих нот из набора "предсказаний звучания",
         определяет звучащую ноту по величине вероятности звучания ноты.
         Производится бинаризация массива к виду: 1 - если отличается от max на delta, 0 - если иначе
         :param data_set: резульат предсказания звучащих нот
-        :param delta: порог звучания ноты
+        :param delta: ???
         :return: бинаризованный массив звучащих нот
         """
+
         result = []
         for item in data_set:
+            delta = (max(item) - min(item)) / delta
             buffer = []
             max_val = max(item)
             for i in range(len(item)):
@@ -61,6 +63,7 @@ class Musician:
                 # =======================================================================================================
             except Exception as ex:
                 print("Too small Batch at: " + track.name)
+                print(ex)
 
     def generate(self, seed: list, iteration_count: int, name: str, output: CustomTrackPoolInterface,
                  track: CustomTrack = CustomTrack(8, 4, 4, [], "")) -> tuple:
@@ -93,7 +96,10 @@ class Musician:
         track.name = name
 
         if output is not None:
+            print("Saving in output")
             output.put_track(track, raw)
+        else:
+            print("No output!")
         return seed, generated, raw
 
     def save(self, filepath, overwrite=True, include_optimizer=True):

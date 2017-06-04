@@ -147,7 +147,7 @@ class MongoConnection:
         return intervals
 
     @staticmethod
-    def statistics_notes(collection_name):
+    def statistics_notes_octave(collection_name):
         client = MongoClient()
         data_collection = client.musician[collection_name]
         data_list = list(data_collection.find({}))
@@ -172,26 +172,69 @@ class MongoConnection:
 
         return notes
 
+    @staticmethod
+    def statistics_notes_total(collection_name):
+        client = MongoClient()
+        data_collection = client.musician[collection_name]
+        data_list = list(data_collection.find({}))
+
+        notes = [0 for i in range(128)]
+        summon_beats = 0
+
+        for data_item in data_list:
+            for item in data_item['data']:
+                summon_beats += 1
+                notes_count = 0
+                for i in range(127):
+                    notes_count += item[i] == 1
+                notes[notes_count] += 1
+            print(data_item['name'])
+
+        for item in range(len(notes)):
+            notes[item] /= float(summon_beats)
+
+        return notes
+
+    @staticmethod
+    def render(self, collection_name, delta=4):
+
+        client = MongoClient()
+        data_collection = client.musician[collection_name]
+        data_list = list(data_collection.find({}))
+
+        notes = [0 for i in range(128)]
+        summon_beats = 0
+
+        for data_item in data_list:
+            rendered = []
+
+            for item in data_item['raw']:
+                delta = (max(item) - min(item)) / delta
+                max_val = max(item)
+                buffer = []
+                for i in range(len(item)):
+                    buffer.append(1 if abs(max_val - item[i]) < delta else 0)
+                rendered.append(buffer)
+            result = CustomTrack(4, 4, 4, divisions=rendered)
+            result.build_midi_file(name=str(collection_name + "/" + str(data_item["name"])), numerator=4, denominator=4)
 
 # ==================================================================
 # РАНТАЙМ!
 # ==================================================================
 
-# MongoConnection.from_db("II_RMS_SQUARED_16_8")
-MongoConnection.from_db("RMS_PERCENTAGE_16_4")
-MongoConnection.from_db("RMS_PERCENTAGE_16_8")
-
-MongoConnection.from_db("ADAM_PERCENTAGE_16_4")
-MongoConnection.from_db("ADAM_PERCENTAGE_16_8")
-
+MongoConnection.from_db("3_ADAM_SQUARED_256")
 
 # from plotly.offline import plot
 # import plotly.graph_objs as go
 #
-# trace1 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_8"), name="Absolute 8")
-# trace2 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_ABSOLUTE_16_4"), name="Absolute 4")
-# trace3 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_8"), name="Squared 8")
-# trace4 = go.Bar(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes("ADAM_SQARED_16_4"), name="Squared 4")
+# trace1 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("LONG_ADAM_SQUARED_32_16"),
+#                     name="Squared LONG")
+# trace2 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_8"),
+#                     name="Squared 8")
+# trace3 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_4"),
+#                     name="Squared 4")
+# trace4 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_2"),
+#                     name="Squared 2")
 #
 # data = [trace1, trace2, trace3, trace4]
 #
