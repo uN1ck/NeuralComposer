@@ -5,7 +5,7 @@ from abc import abstractmethod
 from mido import MidiFile
 from pymongo import MongoClient
 
-from Composer.CustomTrack import CustomTrack
+from Composer.CustomTrack import CustomTrack1D
 
 
 # ================================================================================================================================
@@ -13,11 +13,11 @@ from Composer.CustomTrack import CustomTrack
 # ================================================================================================================================
 class CustomTrackPoolInterface:
     def __init__(self):
-        self.data_set = []
+        self._data_set = []
         self._index = 0
 
     @abstractmethod
-    def put_track(self, value: CustomTrack, name: str):
+    def put_track(self, value: CustomTrack1D, name: str):
         pass
 
     @abstractmethod
@@ -34,14 +34,14 @@ class CustomTrackPoolInterface:
 # ================================================================================================================================
 class FileTrackPool(CustomTrackPoolInterface):
     def __next__(self):
-        if self._index < len(self.data_set):
+        if self._index < len(self._data_set):
             self._index += 1
-            return self.data_set[self._index - 1]
+            return self._data_set[self._index - 1]
         else:
             raise StopIteration
 
-    def put_track(self, value: CustomTrack, name: str):
-        self.data_set.append(value)
+    def put_track(self, value: CustomTrack1D, name: str):
+        self._data_set.append(value)
 
     def __init__(self, path_to_data_pool, division: int):
         super().__init__()
@@ -50,11 +50,11 @@ class FileTrackPool(CustomTrackPoolInterface):
                 midi_file = MidiFile(filename)
                 # TODO: Make builder to this
                 # ==================================================================
-                current_track = CustomTrack(division=division, numerator=4, denominator=4)
+                current_track = CustomTrack1D(division=division, numerator=4, denominator=4)
                 current_track.parse_midi_file(midi_file)
                 # ==================================================================
 
-                self.data_set.append(current_track)
+                self._data_set.append(current_track)
 
     def __iter__(self):
         return self
@@ -77,14 +77,14 @@ class MongoDBTrackPool(CustomTrackPoolInterface):
             self._index += 1
             item = self.data_set.find({})[self._index - 1]
             # TODO: Конструктор из модели бд намутить
-            result = CustomTrack(division=item['division'],
-                                 numerator=item['sizes'][0],
-                                 denominator=item['sizes'][1],
-                                 divisions=item["data"],
-                                 name=item["name"])
+            result = CustomTrack1D(division=item['division'],
+                                   numerator=item['sizes'][0],
+                                   denominator=item['sizes'][1],
+                                   divisions=item["data"],
+                                   name=item["name"])
             return result
 
-    def put_track(self, value: CustomTrack, raw: list = None):
+    def put_track(self, value: CustomTrack1D, raw: list = None):
         self.data_set.insert_one(
             {
                 "name": value.name,

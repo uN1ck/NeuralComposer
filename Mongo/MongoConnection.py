@@ -4,7 +4,7 @@ import os
 from mido import MidiFile, merge_tracks
 from pymongo import MongoClient
 
-from Composer.CustomTrack import CustomTrack
+from Composer.CustomTrack import CustomTrack1D
 
 
 class ParsedMidi:
@@ -93,11 +93,11 @@ class MongoConnection:
 
         for item in list(data_collection.find({})):
             print("YEP!")
-            current = CustomTrack(division=item["division"],
-                                  name=item["name"],
-                                  numerator=item["sizes"][0],
-                                  denominator=item["sizes"][1],
-                                  divisions=item["data"])
+            current = CustomTrack1D(division=item["division"] // 2,
+                                    name=item["name"],
+                                    numerator=item["sizes"][0],
+                                    denominator=item["sizes"][1],
+                                    divisions=item["data"])
 
             current.build_midi_file(name=str(collection_name + "/" + str(index)), numerator=4, denominator=4)
             index += 1
@@ -196,46 +196,64 @@ class MongoConnection:
         return notes
 
     @staticmethod
-    def render(self, collection_name, delta=4):
+    def render(collection_name, delta=4):
 
         client = MongoClient()
         data_collection = client.musician[collection_name]
         data_list = list(data_collection.find({}))
+        try:
+            os.mkdir(collection_name)
+        except:
+            print("Directory Exists!")
 
         notes = [0 for i in range(128)]
         summon_beats = 0
 
+        cn = 0
         for data_item in data_list:
             rendered = []
 
             for item in data_item['raw']:
-                delta = (max(item) - min(item)) / delta
-                max_val = max(item)
+                maxed = list(set(sorted(item, reverse=True)))
+                if len(maxed) > 2:
+                    delta = abs(maxed[0] - maxed[2])
+                else:
+                    delta = abs(maxed[0] - maxed[1])
+
+                max_val = maxed[0]
                 buffer = []
                 for i in range(len(item)):
-                    buffer.append(1 if abs(max_val - item[i]) < delta else 0)
+                    buffer.append(1 if abs(max_val - item[i]) <= delta else 0)
                 rendered.append(buffer)
-            result = CustomTrack(4, 4, 4, divisions=rendered)
-            result.build_midi_file(name=str(collection_name + "/" + str(data_item["name"])), numerator=4, denominator=4)
+            result = CustomTrack1D(4, 4, 4, divisions=rendered)
+            result.build_midi_file(name=str(collection_name + "\\" + str(cn)), numerator=4, denominator=4)
+
+            cn += 1
+            print(cn)
+
 
 # ==================================================================
-# РАНТАЙМ!
+# РАНТАЙМ!1
 # ==================================================================
 
-MongoConnection.from_db("3_ADAM_SQUARED_256")
+# MongoConnection.from_db("3_CNNEDE_ADAM_SQUARED_8")
+# MongoConnection.from_db("3_CNNEDE_ADAM_SQUARED_16")
+# MongoConnection.from_db("3_CNNEDE_ADAM_SQUARED_32")
+# MongoConnection.from_db("3_CNNEDE_ADAM_SQUARED_64")
+# MongoConnection.from_db("TrainSet")
 
-# from plotly.offline import plot
-# import plotly.graph_objs as go
-#
-# trace1 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("LONG_ADAM_SQUARED_32_16"),
-#                     name="Squared LONG")
-# trace2 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_8"),
-#                     name="Squared 8")
-# trace3 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_4"),
-#                     name="Squared 4")
-# trace4 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_notes_total("2_ADAM_SQUARED_16_2"),
-#                     name="Squared 2")
-#
-# data = [trace1, trace2, trace3, trace4]
-#
-# plot(data, filename='basic-bar')
+from plotly.offline import plot
+import plotly.graph_objs as go
+
+trace0 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_intervals("TrainSet"), name="Origin")
+trace1 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_intervals("3_CNNEDE_RMS_SQUARED_8"), name="RMS 8")
+trace2 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_intervals("3_CNNEDE_RMS_SQUARED_16"),
+                    name="RMS 16")
+trace3 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_intervals("3_CNNEDE_RMS_SQUARED_32"),
+                    name="RMS 32")
+trace4 = go.Scatter(x=[i + 1 for i in range(127)], y=MongoConnection.statistics_intervals("3_CNNEDE_RMS_SQUARED_64"),
+                    name="RMS 64")
+
+data = [trace0, trace1, trace2, trace3, trace4]
+
+plot(data, filename='basic-bar')

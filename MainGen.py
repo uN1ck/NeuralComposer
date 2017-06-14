@@ -3,7 +3,7 @@ import argparse
 from colorama import init, Fore, Style
 from mido import MidiFile
 
-from Composer.CustomTrack import CustomTrack
+from Composer.CustomTrack import CustomTrack1D
 
 parser = argparse.ArgumentParser(
     description='LSTM Composer generator. Need to load trained model and midi-file as a seed of generation.',
@@ -26,7 +26,7 @@ print("Parsing input midi: " + args.seed_path)
 # ----------------------------------------------------------------------------------------------------------
 # Parsing input midi file
 # ==========================================================================================================
-seed_track = CustomTrack(16, 4, 4)
+seed_track = CustomTrack1D(16, 4, 4)
 seed_track.parse_midi_file(MidiFile(args.seed_path))
 # ==========================================================================================================
 print("Loading saved model: " + args.model_path)
@@ -46,7 +46,7 @@ print(Style.RESET_ALL)
 # ==========================================================================================================
 (seed, generated, raw) = musician.generate(seed_track.get_segment_data_set(0, musician.x_size), args.length, args.model_path,
                                            None)
-res_track = CustomTrack(args.division, 4, 4)
+res_track = CustomTrack1D(args.division, 4, 4)
 res_track.divisions = generated
 res_track.build_midi_file(args.result_path, 4, 4)
 print(Fore.GREEN + "DONE!")
